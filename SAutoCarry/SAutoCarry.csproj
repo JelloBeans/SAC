@@ -58,19 +58,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="clipper_library">
-      <HintPath>..\..\LeagueSharp222\System\clipper_library.dll</HintPath>
+      <HintPath>..\..\..\..\Desktop\LeagueSharp222\System\clipper_library.dll</HintPath>
     </Reference>
     <Reference Include="LeagueSharp">
-      <HintPath>..\..\LeagueSharp222\System\LeagueSharp.dll</HintPath>
+      <HintPath>..\..\..\..\Desktop\LeagueSharp222\System\LeagueSharp.dll</HintPath>
     </Reference>
     <Reference Include="LeagueSharp.Common">
-      <HintPath>..\..\LeagueSharp222\System\LeagueSharp.Common.dll</HintPath>
+      <HintPath>..\..\..\..\Desktop\LeagueSharp222\System\LeagueSharp.Common.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX">
-      <HintPath>..\..\LeagueSharp222\System\SharpDX.dll</HintPath>
+      <HintPath>..\..\..\..\Desktop\LeagueSharp222\System\SharpDX.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX.Direct3D9">
-      <HintPath>..\..\LeagueSharp222\System\SharpDX.Direct3D9.dll</HintPath>
+      <HintPath>..\..\..\..\Desktop\LeagueSharp222\System\SharpDX.Direct3D9.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -126,6 +126,7 @@
     <Compile Include="SCommon\Evade\TargetedSpellEvader.cs" />
     <Compile Include="SCommon\Maths\ClipperWrapper.cs" />
     <Compile Include="SCommon\Maths\Geometry.cs" />
+    <Compile Include="SCommon\MenuUtils\MenuLanguage.cs" />
     <Compile Include="SCommon\Orbwalking\ConfigMenu.cs" />
     <Compile Include="SCommon\Orbwalking\Drawings.cs" />
     <Compile Include="SCommon\Orbwalking\Events.cs" />
@@ -149,6 +150,7 @@
     <Compile Include="SCommon\Prediction\VectorPrediction.cs" />
     <Compile Include="SCommon\TS\ConfigMenu.cs" />
     <Compile Include="SCommon\TS\TargetSelector.cs" />
+    <Compile Include="SCommon\MenuUtils\MenuExtension.cs" />
     <Compile Include="SUtility\Drawings\DamageIndicator.cs" />
   </ItemGroup>
   <ItemGroup>
