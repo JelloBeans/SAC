@@ -17,6 +17,10 @@ namespace SAutoCarry
         {
             switch(ObjectManager.Player.ChampionName)
             {
+                case "Graves":
+                    Champion = new Graves();
+                    break;
+
                 case "Vayne":
                     Champion = new Vayne();
                     break;
