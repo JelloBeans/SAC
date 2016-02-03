@@ -23,6 +23,7 @@ namespace SAutoCarry.Champions
             OnUpdate += BeforeOrbwalk;
             OnCombo += Combo;
             OnHarass += Harass;
+            Orbwalker.SetChannelingWait(true);
         }
 
         public override void CreateConfigMenu()
@@ -30,23 +31,25 @@ namespace SAutoCarry.Champions
             Menu combo = new Menu("Combo", "SAutoCarry.Jhin.Combo");
             combo.AddItem(new MenuItem("SAutoCarry.Jhin.Combo.UseQ", "UseQ").SetValue(true));
             combo.AddItem(new MenuItem("SAutoCarry.Jhin.Combo.UseW", "Use W").SetValue(true)).ValueChanged += (s, ar) => ConfigMenu.Item("SAutoCarry.Jhin.Combo.UseWMarked").Show(ar.GetNewValue<bool>());
-            combo.AddItem(new MenuItem("SAutoCarry.Jhin.Combo.UseWMarked", "Use W Only If Target Is Marked").SetValue(false)).Show(combo.Item("SAutoCarry.Jhin.Combo.UseW").GetValue<bool>());
+            combo.AddItem(new MenuItem("SAutoCarry.Jhin.Combo.UseWMarked", "Use W Only If Target Is Marked").SetValue(true)).Show(combo.Item("SAutoCarry.Jhin.Combo.UseW").GetValue<bool>());
             combo.AddItem(new MenuItem("SAutoCarry.Jhin.Combo.UseEImmobile", "Use E Immobile Targets").SetValue(true));
             combo.AddItem(new MenuItem("SAutoCarry.Jhin.Combo.UseEDashing", "Use E Dashing Targets").SetValue(true));
             combo.AddItem(new MenuItem("SAutoCarry.Jhin.Combo.UseR", "Use R Shoots If Ult Activated").SetValue(true));
 
             Menu harass = new Menu("Harass", "SAutoCarry.Jhin.Harass");
             harass.AddItem(new MenuItem("SAutoCarry.Jhin.Harass.UseQ", "Use Q").SetValue(true));
+            harass.AddItem(new MenuItem("SAutoCarry.Jhin.Harass.UseW", "Use W").SetValue(true));
             harass.AddItem(new MenuItem("SAutoCarry.Jhin.Harass.Toggle", "Toggle Harass").SetValue(new KeyBind('T', KeyBindType.Toggle)));
 
             Menu misc = new Menu("Misc", "SAutoCarry.Jhin.Misc");
             misc.AddItem(new MenuItem("SAutoCarry.Jhin.Misc.AdjustW", "Adjust W Range").SetValue(new Slider(1000, 0, 2500))).ValueChanged += (s, ar) => Spells[W].Range = ar.GetNewValue<Slider>().Value;
             misc.AddItem(new MenuItem("SAutoCarry.Jhin.Misc.AdjustR", "Adjust R Range").SetValue(new Slider(1000, 0, 3500))).ValueChanged += (s, ar) => Spells[R].Range = ar.GetNewValue<Slider>().Value;
-            misc.AddItem(new MenuItem("SAutoCarry.Jhin.Misc.KillStealRW", "KillSteal").SetValue(true));
+            misc.AddItem(new MenuItem("SAutoCarry.Jhin.Misc.KillStealRW", "KillSteal").SetValue(false));
 
             ConfigMenu.AddSubMenu(combo);
             ConfigMenu.AddSubMenu(harass);
             ConfigMenu.AddSubMenu(misc);
+            ConfigMenu.AddToMainMenu();
         }
 
         public override void SetSpells()
@@ -54,9 +57,9 @@ namespace SAutoCarry.Champions
             Spells[Q] = new Spell(SpellSlot.Q, 550f);
 
             Spells[W] = new Spell(SpellSlot.W, 2500f);
-            Spells[W].SetSkillshot(0.25f, 40f, 0f, false, SkillshotType.SkillshotLine);
+            Spells[W].SetSkillshot(0.75f, 40f, 0f, false, SkillshotType.SkillshotLine);
 
-            Spells[E] = new Spell(SpellSlot.E);
+            Spells[E] = new Spell(SpellSlot.E, 750f);
 
             Spells[R] = new Spell(SpellSlot.R, 3500f);
             Spells[R].SetSkillshot(0.25f, 40f, 5000f, false, SkillshotType.SkillshotLine);
@@ -73,32 +76,44 @@ namespace SAutoCarry.Champions
 
         public void Combo()
         {
-            if (Spells[Q].IsReady() && ComboUseQ)
-            {
-                var t = TargetSelector.GetTarget(Spells[Q].Range, TargetSelector.DamageType.Physical);
-                if (t != null)
-                    Spells[Q].CastOnUnit(t);
-            }
-
-            if (Spells[W].IsReady() && ComboUseW)
-            {
-                var t = TargetSelector.GetTarget(Spells[W].Range, TargetSelector.DamageType.Physical);
-                if (t != null && (!ComboUseWMarked || t.HasBuff("jhinespotteddebuff")))
-                    Spells[W].SPredictionCast(t, HitChance.High);
-            }
-
-            if (Spells[E].IsReady() && (ComboUseEDashing || ComboUseEImmobile) && Spells[E].Instance.Ammo != 0)
-            {
-                var t = HeroManager.Enemies.Where(p => p.IsValidTarget(Spells[E].Range) && ((p.IsImmobilized() && ComboUseEImmobile) || (p.IsDashing() && ComboUseEDashing))).OrderBy(q => q.GetPriority()).FirstOrDefault();
-                if (t != null)
-                    Spells[E].Cast(t.ServerPosition);
-            }
 
             if (IsRShootCastable)
             {
                 var t = TargetSelector.GetTarget(Spells[R].Range, TargetSelector.DamageType.Physical);
                 if (t != null)
                     Spells[R].SPredictionCast(t, HitChance.High);
+            }
+            else
+            {
+                if (Spells[Q].IsReady() && ComboUseQ)
+                {
+                    var t = TargetSelector.GetTarget(Spells[Q].Range, TargetSelector.DamageType.Physical);
+                    if (t != null)
+                        Spells[Q].CastOnUnit(t);
+                }
+
+                if (Spells[W].IsReady() && ComboUseW)
+                {
+                    var t = TargetSelector.GetTarget(Spells[W].Range, TargetSelector.DamageType.Physical);
+                    if (t != null && (!ComboUseWMarked || t.HasBuff("jhinespotteddebuff")))
+                    {
+                        var pred = Spells[W].GetSPrediction(t);
+                        if (pred.HitChance >= HitChance.High)
+                        {
+                            if (pred.UnitPosition.Distance(ObjectManager.Player.ServerPosition) < Spells[E].Range)
+                                Spells[E].Cast(pred.UnitPosition);
+
+                            Spells[W].Cast(pred.CastPosition);
+                        }
+                    }
+                }
+
+                if (Spells[E].IsReady() && (ComboUseEDashing || ComboUseEImmobile) && Spells[E].Instance.Ammo != 0)
+                {
+                    var t = HeroManager.Enemies.Where(p => p.IsValidTarget(Spells[E].Range) && ((p.IsImmobilized() && ComboUseEImmobile) || (p.IsDashing() && ComboUseEDashing))).OrderBy(q => q.GetPriority()).FirstOrDefault();
+                    if (t != null)
+                        Spells[E].Cast(t.ServerPosition);
+                }
             }
         }
 
@@ -133,6 +148,14 @@ namespace SAutoCarry.Champions
                         }
                     }
                 }
+            }
+
+
+            if (Spells[W].IsReady() && HarassUseW)
+            {
+                t = TargetSelector.GetTarget(Spells[W].Range, TargetSelector.DamageType.Physical);
+                if (t != null)
+                    Spells[W].SPredictionCast(t, HitChance.High);
             }
         }
 
@@ -215,6 +238,11 @@ namespace SAutoCarry.Champions
         public bool HarassUseQ
         {
             get { return ConfigMenu.Item("SAutoCarry.Jhin.Harass.UseQ").GetValue<bool>(); }
+        }
+
+        public bool HarassUseW
+        {
+            get { return ConfigMenu.Item("SAutoCarry.Jhin.Harass.UseW").GetValue<bool>(); }
         }
 
         public bool HarassToggle
